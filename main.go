@@ -108,7 +108,7 @@ func main(){
 	}
 
 	// Proceed normally
-	if strings.Contains(*url, "wattpad.com/story"){
+	if strings.Contains(*url, "www.wattpad.com/story"){
 		fmt.Println("Generating EPUB for:", *url)
 		err := download_wattpad(*url)
 		if err != nil {
@@ -116,6 +116,6 @@ func main(){
 		}
 		fmt.Println("Epub Generated Successfully")
 	} else {
-		log.Fatalf("A url '%s' não é válida do wattpad", *url)
+		log.Fatalf("A url '%s' não é válida da story do wattpad", *url)
 	}
 }

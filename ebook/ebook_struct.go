@@ -801,7 +801,7 @@ func Make_Ebook(tempDir string, filename string, img_bytes []byte, img_type stri
     zipWriter := zip.NewWriter(epub)
     defer zipWriter.Close()
 
-    // Criar os arquivos no EPUB
+    // para criar os arquivos do EPUB
     if err := createMimetype(zipWriter); err != nil {
         return err
     }

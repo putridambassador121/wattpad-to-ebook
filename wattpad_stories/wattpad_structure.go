@@ -118,7 +118,6 @@ func Get_Chapters(story_url string, ) ([]Story_Chapters, Story_Metadata, error) 
 		return []Story_Chapters{}, Story_Metadata{}, err
 	}
 
-	// fmt.Println(cover_img)
 	story_metadata.Name = title
 	story_metadata.Author = author
 	story_metadata.Description = description
@@ -143,12 +142,7 @@ func Get_Chapters(story_url string, ) ([]Story_Chapters, Story_Metadata, error) 
 
 
 func Get_Chapter_Text(chapter_url string) ([]byte, error) {
-// 	file, err := os.Create("chap1.xhtml")
 
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer file.Close()
 	client := &http.Client{}
 
 	id := strings.Split(chapter_url[24:], "-")[0]
@@ -177,15 +171,6 @@ func Get_Chapter_Text(chapter_url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	// pretty := gohtml.Format(string(bodyBytes))
-
-	// err = ebook.Make_Ebook(pretty)
-
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// file.WriteString(xmlBytes)
 
 	return bodyBytes, nil
 }
