@@ -23,11 +23,11 @@ jobs:
         run: |
           mkdir -p dist
           GOOS=windows GOARCH=amd64 go build -o dist/wattpad-to-ebook-x64.exe
-          GOOS=linux GOARCH=amd64 go build -o dist/wattpad-to-ebook-x64
+          GOOS=linux GOARCH=amd64 go build -o dist/wattpad-to-ebook-linux-x64
 
       - name: Upload release
         uses: softprops/action-gh-release@v1
         with:
           files: |
             dist/wattpad-to-ebook-x64.exe
-            dist/wattpad-to-ebook-x64
+            dist/wattpad-to-ebook-linux-x64
