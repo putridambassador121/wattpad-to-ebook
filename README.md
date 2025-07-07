@@ -1,8 +1,8 @@
 
-# [Description (en-US)](#what-is-this?)
+# [Description (en-US)](#what-is-this)
 
 
-# [Descrição (pt-Br)](#O-que-é-isso?)
+# [Descrição (pt-Br)](#O-que-é-isso)
 
 
 
