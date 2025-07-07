@@ -1,0 +1,25 @@
+name: CI – Testes Unitários e E2E
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: {}  # permite executar manualmente
+
+jobs:
+  test:
+    name: Executar testes E2E
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.4'
+
+      - name: Rodar o teste E2E
+        run: |
+          go test -v ./package-tests/e2e_test.go
