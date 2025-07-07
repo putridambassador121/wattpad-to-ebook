@@ -18,7 +18,7 @@ This is a wattpad to ebook converter, that allows you to:
 
 - #### Download the individual images of the chapters (there can be more than one)
 - #### Add more style to the epub (kinda dry, only takes you to the first chapter and beyond), with a introduction.xhtml or something like that
-- #### Maybe do more to allow accessibility to the epub (maybe, I'm undecided on it)
+- #### Maybe do more to allow accessibility to the epub (maybe, I'm not sure)
 
 
 ## O que é isso?
