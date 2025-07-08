@@ -1,13 +1,15 @@
 package main
 
 import (
-	"fmt"
-	"strings"
-	"log"
 	"flag"
+	"fmt"
+	"log"
 	"os"
+	"path/filepath"
+	"strings"
 	"wattpad-to-ebook/ebook"
 	"wattpad-to-ebook/wattpad_stories"
+
 	"github.com/yosssi/gohtml"
 )
 
@@ -35,7 +37,42 @@ func download_wattpad(url string) error {
 		return err
 	}
 
-	err = ebook.Setup_content(tempDir, len(chapters), metadata.Name, metadata.Author, metadata.Description, metadata.CoverImageType)
+	err = ebook.SetupImg(tempDir)
+
+	if err != nil {
+		return err
+	}
+	anyImage := false
+
+	for _, chapter := range chapters {
+    bodyBytes, err := wattpadstories.Get_Chapter_Text(chapter.URL)
+    if err != nil {
+        return err
+    }
+
+    modifiedBody, foundImage, err := wattpadstories.DownloadAndRewriteImages(bodyBytes, tempDir, chapter.Index)
+    if err != nil {
+        return err
+    }
+
+    if foundImage {
+        anyImage = true
+    }
+
+    pretty := gohtml.Format(modifiedBody)
+    err = ebook.AddChapters(pretty, chapter.Index, tempDir, chapter.Title)
+    if err != nil {
+        return err
+    }
+}
+
+	imgDir, err := os.ReadDir(filepath.Join(tempDir, "images"))
+
+	if err != nil {
+		return err
+	}
+
+	err = ebook.Setup_content(tempDir, len(chapters), metadata.Name, metadata.Author, metadata.Description, metadata.CoverImageType, imgDir)
 
 	if err != nil {
 		return err
@@ -59,20 +96,7 @@ func download_wattpad(url string) error {
 		return err
 	}
 	
-	for _, chapter := range chapters {
-		bodyBytes, err := wattpadstories.Get_Chapter_Text(chapter.URL)
-		
-		if err != nil {
-		return err
-		}
-		pretty := gohtml.Format(string(bodyBytes))
-		err = ebook.AddChapters(pretty, chapter.Index, tempDir, chapter.Title)
 
-		if err != nil {
-			return err
-		}
-
-	}
 	
 	var chap_list = []ebook.ChapterNavItem{}
 
@@ -87,9 +111,9 @@ func download_wattpad(url string) error {
 	}
 
 
-	ebook.Make_Ebook(tempDir, epubName, metadata.CoverImage, metadata.CoverImageType)
+	ebook.Make_Ebook(tempDir, epubName, metadata.CoverImage, metadata.CoverImageType, anyImage)
 	
-	os.RemoveAll(tempDir)	
+	os.RemoveAll(tempDir)
 	
 	return nil
 }

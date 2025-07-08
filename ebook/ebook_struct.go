@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"mime"
 	"os"
 	"path/filepath"
 	"strings"
@@ -247,7 +248,7 @@ func GenerateNavXHTML(bookTitle string, chapters []ChapterNavItem) (string, erro
 
 
 
-func GenerateContentOPF(title, author, description string, chapterCount int, img_type string) ([]byte, error) {
+func GenerateContentOPF(title, author, description string, chapterCount int, img_type string, imgDir []os.DirEntry) ([]byte, error) {
 	chapters := make([]Item, 0)
 	var refs []Itemref
 
@@ -261,9 +262,10 @@ func GenerateContentOPF(title, author, description string, chapterCount int, img
 	// chapters = append(chapters, Item{Href: "introduction.xhtml", ID: "chapter_0", MediaType: "application/xhtml+xml"})
 	// refs = append(refs, Itemref{IDRef: "chapter_0"})
 
+	
+
 	// Nav
 	chapters = append(chapters, Item{Href: "nav.xhtml", ID: "nav", MediaType: "application/xhtml+xml", Properties: "nav"})
-	// refs = append(refs, Itemref{IDRef: "nav"})
 
 	img_ext := getImageExt(img_type)
 	// Static entries
@@ -277,6 +279,14 @@ func GenerateContentOPF(title, author, description string, chapterCount int, img
 	for i := range chapterCount {
 		staticItems = append(staticItems, 
 			Item{Href: fmt.Sprintf("chapter_%d.xhtml", i+1), ID: fmt.Sprintf("chapter_%d", i+1), MediaType: "application/xhtml+xml"},)
+	}
+
+	for _, i := range imgDir {
+		generalImg := strings.Split(i.Name(), ".")
+		staticItems = append(staticItems, 
+		Item{Href: fmt.Sprintf("../images/%s", i.Name()), ID: generalImg[0], MediaType: mime.TypeByExtension(fmt.Sprintf(".%s", generalImg[1]))},
+		)
+
 	}
 
 	manifest := Manifest{Items: append(staticItems, chapters...)}
@@ -368,6 +378,15 @@ func getBodyNodeFromHTML(rawFormatted string) (*html.Node, error) {
 }
 
 
+func SetupImg(tempDir string) error {
+	err := os.MkdirAll(filepath.Join(tempDir, "images"), os.ModePerm)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func GenerateXHTML(title string, bodyContent string) ([]byte, error) {
 	// Step 1: Parse HTML5 body content
@@ -531,7 +550,7 @@ func Setup_container(tempDir string) (error) {
 	return nil
 }
 
-func Setup_content(tempDir string, numb_of_chaps int, name string, author string, desc string, img_type string) (error){
+func Setup_content(tempDir string, numb_of_chaps int, name string, author string, desc string, img_type string, imgDir []os.DirEntry) (error){
 	contentFilePath := filepath.Join(tempDir, "OEBPS", "content.opf")
 
 	contentFile, err := os.Create(contentFilePath)
@@ -540,7 +559,7 @@ func Setup_content(tempDir string, numb_of_chaps int, name string, author string
 		return err
 	}
 
-	containerBytes, err := GenerateContentOPF(name, author, desc, numb_of_chaps, img_type)
+	containerBytes, err := GenerateContentOPF(name, author, desc, numb_of_chaps, img_type, imgDir)
   	if err != nil {
     	return err
   	}
@@ -780,8 +799,40 @@ func createNav(w *zip.Writer, tempDir string) (error) {
 }
 
 
-func Make_Ebook(tempDir string, filename string, img_bytes []byte, img_type string) (error) {
-	// fmt.Println(filename)
+
+func AddImages(w *zip.Writer, tempDir string) error {
+    imgDir := filepath.Join(tempDir, "images")
+    if _, err := os.Stat(imgDir); os.IsNotExist(err) {
+        return nil // nothing to do
+    }
+
+    entries, err := os.ReadDir(imgDir)
+    if err != nil {
+        return err
+    }
+
+    for _, i := range entries {
+        content, err := os.ReadFile(filepath.Join(imgDir, i.Name()))
+        if err != nil {
+            return err
+        }
+
+        f, err := w.Create(filepath.Join("images", i.Name()))
+        if err != nil {
+            return err
+        }
+
+        _, err = f.Write(content)
+        if err != nil {
+            return err
+        }
+    }
+
+    return nil
+}
+
+
+func Make_Ebook(tempDir string, filename string, img_bytes []byte, img_type string, anyImage bool) (error) {
 	epub, err := os.Create(filename)
 	
 	if err != nil {
@@ -845,7 +896,11 @@ func Make_Ebook(tempDir string, filename string, img_bytes []byte, img_type stri
 		return err
 	}
 
-
+	if anyImage {
+	if err := AddImages(zipWriter, tempDir); err != nil {
+		return err
+	}
+	}
 	return nil
 
 }

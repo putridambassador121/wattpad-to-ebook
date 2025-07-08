@@ -1,16 +1,19 @@
 package wattpadstories
 
 import (
+	"bytes"
 	"compress/flate"
 	"compress/gzip"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"github.com/PuerkitoBio/goquery"
 	"github.com/andybalholm/brotli"
 	"github.com/klauspost/compress/zstd"
-	
+	"github.com/gabriel-vasile/mimetype"
 )
 
 
@@ -173,4 +176,54 @@ func Get_Chapter_Text(chapter_url string) ([]byte, error) {
 	}
 
 	return bodyBytes, nil
+}
+
+func DownloadAndRewriteImages(htmlContent []byte, tempDir string, chapIndex int) (string, bool,error) {
+	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(htmlContent))
+	if err != nil {
+		return "", false, err
+	}
+
+	foundAnyImage := false
+
+	doc.Find("img").Each(func(i int, s *goquery.Selection) {
+    src, exists := s.Attr("src")
+    if !exists || strings.TrimSpace(src) == "" {
+        return
+    }
+
+    // Download da imagem
+    res, err := http.Get(src)
+    if err != nil {
+        return
+    }
+    defer res.Body.Close()
+
+    // Detectar tipo e salvar imagem
+    buf, err := io.ReadAll(res.Body)
+    if err != nil {
+        return
+    }
+
+    contentType := mimetype.Detect(buf)
+
+    filename := fmt.Sprintf("chapter%d_img%d%s", chapIndex, i, contentType.Extension())
+    path := filepath.Join(tempDir, "images", filename)
+
+    os.MkdirAll(filepath.Join(tempDir, "images"), os.ModePerm)
+    os.WriteFile(path, buf, 0644)
+
+    s.SetAttr("src", fmt.Sprintf("../images/%s", filename))
+    s.SetAttr("width", "100%")
+
+    foundAnyImage = true
+})
+
+htmlBody, err := doc.Html()
+
+if err != nil {
+	return "", false, nil
+}
+
+return htmlBody, foundAnyImage, nil
 }
